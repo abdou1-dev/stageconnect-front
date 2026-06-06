@@ -28,6 +28,12 @@ export interface User {
   role: Role
 }
 
+// Réponse de GET /auth/me — l'utilisateur avec son profil selon le rôle
+export interface UserWithProfiles extends User {
+  student?: Student
+  company?: Company
+}
+
 export interface Student {
   id: string
   userId: string
@@ -38,6 +44,9 @@ export interface Student {
   bio?: string
   skills: string[]
   photoUrl?: string
+  cvUrl?: string
+  formations?: unknown
+  experiences?: unknown
 }
 
 export interface Company {
@@ -48,6 +57,7 @@ export interface Company {
   ville?: string
   description?: string
   logoUrl?: string
+  website?: string
 }
 
 export interface Job {
@@ -58,6 +68,8 @@ export interface Job {
   type: JobType
   ville?: string
   secteur?: string
+  duration?: string
+  salary?: string
   isActive: boolean
   createdAt: string
   company?: Company
