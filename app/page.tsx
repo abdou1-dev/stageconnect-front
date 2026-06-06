@@ -212,14 +212,46 @@ function HeroIllustration() {
   );
 }
 
-/* ————— Stats ————— */
-const STATS = [
-  { value: "500+", label: "Offres publiées", color: "text-primary-blue" },
-  { value: "200+", label: "Entreprises partenaires", color: "text-accent" },
-  { value: "5000+", label: "Étudiants inscrits", color: "text-success" },
-] as const;
+/* ————— Stats — chiffres RÉELS depuis l'API (ISR 1 h, fallback gracieux) ————— */
+async function fetchCount(path: string): Promise<number | null> {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+    const res = await fetch(`${base}${path}`, {
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
+    });
+    const payload = (await res.json()) as {
+      success?: boolean;
+      data?: { total?: number };
+    };
+    return payload.success && typeof payload.data?.total === "number"
+      ? payload.data.total
+      : null;
+  } catch {
+    return null; // API injoignable au build : on retombe sur le libellé seul
+  }
+}
 
-function Stats() {
+async function Stats() {
+  const [jobs, companies] = await Promise.all([
+    fetchCount("/jobs?limit=1"),
+    fetchCount("/companies?limit=1"),
+  ]);
+
+  const STATS = [
+    {
+      value: jobs !== null ? String(jobs) : "—",
+      label: "Offres en ligne",
+      color: "text-primary-blue",
+    },
+    {
+      value: companies !== null ? String(companies) : "—",
+      label: "Entreprises inscrites",
+      color: "text-accent",
+    },
+    { value: "100%", label: "Gratuit pour les étudiants", color: "text-success" },
+  ] as const;
+
   return (
     <section className="border-y border-primary/10 bg-card">
       <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-primary/10 px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
