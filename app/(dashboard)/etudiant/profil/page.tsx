@@ -6,7 +6,7 @@ import { Loader2, MapPin, Pencil, Phone, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarUpload } from '@/components/shared/AvatarUpload'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -79,6 +79,17 @@ export default function StudentProfilePage() {
   function updateField(field: keyof EditForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  }
+
+  // Persiste l'URL Cloudinary après upload — appelé par AvatarUpload
+  async function handlePhotoUploaded(url: string) {
+    if (!profile) return
+    const res = await api.put<StudentProfile>(`/students/${profile.id}`, {
+      photoUrl: url,
+    })
+    if (!res.success) throw new Error(res.error)
+    setProfile({ ...profile, photoUrl: res.data.photoUrl ?? url })
+    toast.success('Photo de profil mise à jour !')
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -160,7 +171,7 @@ export default function StudentProfilePage() {
             isSaving={isSaving}
           />
         ) : (
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} onPhotoUploaded={handlePhotoUploaded} />
         )
       ) : null}
     </div>
@@ -168,7 +179,13 @@ export default function StudentProfilePage() {
 }
 
 /* ————— Affichage ————— */
-function ProfileCard({ profile }: { profile: StudentProfile }) {
+function ProfileCard({
+  profile,
+  onPhotoUploaded,
+}: {
+  profile: StudentProfile
+  onPhotoUploaded: (url: string) => Promise<void>
+}) {
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
 
@@ -176,17 +193,12 @@ function ProfileCard({ profile }: { profile: StudentProfile }) {
     <Card className="animate-fade-up overflow-hidden border-primary/10 py-0">
       {/* Bandeau identité sur fond bleu sombre */}
       <div className="flex flex-col items-center gap-5 bg-primary px-6 py-8 text-primary-foreground sm:flex-row sm:items-center">
-        <Avatar className="h-20 w-20 border-2 border-accent">
-          {profile.photoUrl && (
-            <AvatarImage
-              src={profile.photoUrl}
-              alt={`Photo de ${profile.firstName} ${profile.lastName}`}
-            />
-          )}
-          <AvatarFallback className="bg-primary-blue font-heading text-xl font-bold text-white">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <AvatarUpload
+          currentUrl={profile.photoUrl}
+          fallbackText={initials}
+          onUploaded={onPhotoUploaded}
+          ariaLabel="Changer ma photo de profil"
+        />
         <div className="text-center sm:text-left">
           <h2 className="font-heading text-2xl font-extrabold tracking-tight">
             {profile.firstName} {profile.lastName}

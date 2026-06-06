@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StageConnect — Frontend
 
-## Getting Started
+Plateforme web de mise en relation **étudiants ↔ entreprises** pour la gestion des stages et emplois au Sénégal.
+Mémoire de Licence 3 IDA — UNCHK · 2026
 
-First, run the development server:
+**Production** : [stageconnect-front.vercel.app](https://stageconnect-front.vercel.app)
+**Backend** : [stageconnect-back](https://github.com/abdou1-dev/stageconnect-back) (Express 5 + Prisma 7 + Neon PostgreSQL)
+
+---
+
+## Stack
+
+| Couche | Techno |
+|---|---|
+| Framework | Next.js 16 (App Router, TypeScript, Turbopack) |
+| UI | Tailwind CSS 4 + shadcn/ui (Base UI) |
+| Typo | Syne (titres) + DM Sans (corps) via `next/font` |
+| Toasts | Sonner |
+| Uploads | Cloudinary (unsigned upload) |
+| Déploiement | Vercel — auto-deploy : `main` → Production, `develop` → Preview |
+
+## Démarrage
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/abdou1-dev/stageconnect-front.git
+cd stageconnect-front
+npm install
+
+# Variables d'environnement
+cp .env.local.example .env.local
+# puis remplir les valeurs (voir tableau ci-dessous)
+
+npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> Le backend doit tourner sur le port 3001 (`npm run dev` dans stageconnect-back).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Variables d'environnement (`.env.local`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Description | Exemple |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | URL de l'API backend | `http://localhost:3001/api` |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloud name Cloudinary | `dmio3ke1l` |
+| `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` | Preset d'upload **unsigned** | `stageconnect` |
 
-## Learn More
+> Ces valeurs `NEXT_PUBLIC_*` sont publiques par design (aucun secret côté front).
+> Le preset Cloudinary doit être configuré en **unsigned** (Dashboard → Settings → Upload → Upload presets).
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev      # serveur de développement (port 3000)
+npm run build    # build de production
+npm run lint     # ESLint
+npx shadcn add <composant>   # ajouter un composant shadcn/ui
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Structure
 
-## Deploy on Vercel
+```
+app/
+  (auth)/login, register     → authentification (split-screen)
+  (dashboard)/etudiant/      → profil, offres, candidatures, messages
+  (dashboard)/entreprise/    → profil, mes-offres, candidatures, messages
+  (dashboard)/admin/         → dashboard admin
+  page.tsx                   → landing page publique
+components/
+  ui/          → shadcn/ui (généré — ne pas modifier à la main)
+  shared/      → DashboardShell, AvatarUpload, PasswordInput…
+  etudiant/    → JobCard, JobTypeBadge, StatusBadge…
+  entreprise/  → JobFormDialog…
+lib/           → api.ts (client HTTP), auth.ts (JWT), cloudinary.ts, utils.ts
+hooks/         → useAuth.ts
+types/         → index.ts (tous les types partagés)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Conventions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Branches : `feature/xxx` / `fix/xxx` depuis `develop` → PR (push direct bloqué sur `main` et `develop`)
+- Commits : `feat(scope): description` (Conventional Commits)
+- `main` = production uniquement — release par PR `develop → main` avec review
+- Composants en anglais, commentaires en français, pas de `any`, Server Components par défaut
+
+## Auteurs
+
+- **Abdoulaye DIAW** — Lead front · [@abdou1-dev](https://github.com/abdou1-dev)
+- **Abdallah Moussa DIALLO** — Lead back · [@LivaiAckerman7](https://github.com/LivaiAckerman7)
