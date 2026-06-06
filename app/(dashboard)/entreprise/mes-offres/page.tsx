@@ -102,25 +102,33 @@ export default function CompanyJobsPage() {
   }
 
   async function toggleActive(job: MyJob) {
-    const res = await api.put<MyJob>(`/jobs/${job.id}`, { isActive: !job.isActive })
-    if (!res.success) {
-      toast.error(res.error)
-      return
+    try {
+      const res = await api.put<MyJob>(`/jobs/${job.id}`, { isActive: !job.isActive })
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      toast.success(job.isActive ? 'Offre désactivée.' : 'Offre réactivée !')
+      refresh()
+    } catch {
+      toast.error('Action impossible. Vérifiez votre connexion.')
     }
-    toast.success(job.isActive ? 'Offre désactivée.' : 'Offre réactivée !')
-    refresh()
   }
 
   async function confirmDelete() {
     if (!deletingJob) return
-    const res = await api.delete(`/jobs/${deletingJob.id}`)
-    if (!res.success) {
-      toast.error(res.error)
-      return
+    try {
+      const res = await api.delete(`/jobs/${deletingJob.id}`)
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      toast.success('Offre supprimée.')
+      setDeletingJob(null)
+      refresh()
+    } catch {
+      toast.error('Suppression impossible. Vérifiez votre connexion.')
     }
-    toast.success('Offre supprimée.')
-    setDeletingJob(null)
-    refresh()
   }
 
   return (
