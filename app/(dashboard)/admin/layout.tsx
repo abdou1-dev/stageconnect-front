@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { ChangePasswordDialog } from '@/components/shared/ChangePasswordDialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -128,6 +129,7 @@ function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 Administrateur
               </p>
             </div>
+            <ChangePasswordDialog buttonClassName="shrink-0 text-primary-foreground/65 hover:bg-primary-foreground/10 hover:text-accent" />
             <Button
               variant="ghost"
               size="icon"

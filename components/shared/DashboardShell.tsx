@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { ChangePasswordDialog } from '@/components/shared/ChangePasswordDialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -175,6 +176,7 @@ function SidebarContent({
                 {roleLabel}
               </p>
             </div>
+            <ChangePasswordDialog buttonClassName="shrink-0 text-primary-foreground/65 hover:bg-primary-foreground/10 hover:text-accent" />
             <Button
               variant="ghost"
               size="icon"
