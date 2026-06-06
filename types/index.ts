@@ -28,6 +28,12 @@ export interface User {
   role: Role
 }
 
+// Réponse de GET /auth/me — l'utilisateur avec son profil selon le rôle
+export interface UserWithProfiles extends User {
+  student?: Student
+  company?: Company
+}
+
 export interface Student {
   id: string
   userId: string

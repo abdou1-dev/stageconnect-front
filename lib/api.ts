@@ -4,7 +4,8 @@
 import { getToken } from '@/lib/auth'
 import type { ApiResponse } from '@/types'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+// `||` (et non `??`) : couvre aussi la variable définie mais vide
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
 async function request<T>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = getToken()
