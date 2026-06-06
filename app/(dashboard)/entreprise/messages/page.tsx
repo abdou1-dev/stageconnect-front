@@ -1,8 +1,21 @@
-// Page placeholder — a implementer
+'use client'
+
+// Messagerie entreprise — UI partagée avec l'espace étudiant (cf. Messaging).
+import { Messaging } from '@/components/shared/Messaging'
+
 export default function CompanyMessagesPage() {
   return (
-    <main className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold">Messages</h1>
-    </main>
+    <div className="mx-auto max-w-5xl">
+      <div className="mb-6">
+        <p className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.25em] text-primary-blue">
+          <span className="h-px w-8 bg-accent" aria-hidden />
+          Espace entreprise — 04
+        </p>
+        <h1 className="mt-3 font-heading text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
+          Messages
+        </h1>
+      </div>
+      <Messaging />
+    </div>
   )
 }

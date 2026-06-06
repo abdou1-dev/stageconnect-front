@@ -35,6 +35,33 @@ export interface UserWithProfiles extends User {
   company?: Company
 }
 
+// Participant d'une conversation (sous-ensemble User + profil selon rôle)
+export interface MessageParticipant {
+  id: string
+  role: Role
+  student?: { firstName: string; lastName: string; photoUrl?: string | null } | null
+  company?: { name: string; logoUrl?: string | null } | null
+}
+
+export interface ChatMessage {
+  id: string
+  senderId: string
+  receiverId: string
+  conversationId: string
+  content: string
+  isRead: boolean
+  createdAt: string
+  sender?: MessageParticipant
+  receiver?: MessageParticipant
+}
+
+// Entrée de GET /messages/conversations
+export interface Conversation {
+  conversationId: string
+  lastMessage: ChatMessage | null
+  unread: number
+}
+
 // Ligne utilisateur du dashboard admin (GET /admin/users)
 export interface AdminUser {
   id: string
