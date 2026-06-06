@@ -25,16 +25,22 @@ export function useAuth() {
   // Restaure la session au chargement si un token est présent.
   // Tout passe par une fonction async : la règle react-hooks/set-state-in-effect
   // interdit les setState synchrones dans le corps d'un effet.
+  // ⚠️ On ne retire le token QUE sur un rejet d'authentification explicite
+  // (401/403) — une panne réseau ou un redéploiement du back ne doit pas
+  // déconnecter l'utilisateur (bug constaté en prod le 06/06).
   useEffect(() => {
     async function restoreSession() {
       const token = getToken()
       if (!token) return
       const res = await api.get<User>('/auth/me')
       if (res.success) setUser(res.data)
-      else removeToken() // token expiré ou invalide
+      else if (res.code === 401 || res.code === 403) removeToken() // token expiré/invalide ou compte sanctionné
+      // autre échec (5xx, timeout…) : on garde le token, l'utilisateur réessaiera
     }
     restoreSession()
-      .catch(() => removeToken())
+      .catch(() => {
+        // erreur réseau : token conservé volontairement
+      })
       .finally(() => setIsLoading(false))
   }, [])
 
