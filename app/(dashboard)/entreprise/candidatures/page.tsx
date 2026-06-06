@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { StatusBadge } from '@/components/etudiant/StatusBadge'
+import { ContactButton } from '@/components/shared/ContactButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -251,6 +252,17 @@ function CandidateRow({
             )}
             <span>Reçue {formatRelativeDate(application.createdAt)}</span>
             {application.coverLetter && <CoverLetterDialog application={application} />}
+            {student?.cvUrl && (
+              <a
+                href={student.cvUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 font-medium text-primary-blue underline-offset-4 hover:underline"
+              >
+                <FileText className="h-3 w-3" aria-hidden />
+                Voir le CV
+              </a>
+            )}
           </div>
           {student && student.skills.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -273,6 +285,13 @@ function CandidateRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-3">
+        {student?.userId && (
+          <ContactButton
+            receiverId={student.userId}
+            recipientName={`${student.firstName} ${student.lastName}`}
+            messagesPath="/entreprise/messages"
+          />
+        )}
         <StatusBadge status={application.status} />
         <Select
           items={STATUS_SELECT_ITEMS}

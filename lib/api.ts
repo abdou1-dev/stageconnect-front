@@ -31,6 +31,19 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<ApiRe
 export const api = {
   get: <T = unknown>(url: string) => request<T>(url),
 
+  // Multipart (upload de fichiers) : pas de Content-Type manuel (le navigateur
+  // pose le boundary), timeout élargi pour les connexions lentes
+  upload: async <T = unknown>(url: string, formData: FormData): Promise<ApiResponse<T>> => {
+    const token = getToken()
+    const res = await fetch(`${BASE_URL}${url}`, {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(60_000),
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+    return res.json() as Promise<ApiResponse<T>>
+  },
+
   post: <T = unknown>(url: string, body: unknown) =>
     request<T>(url, { method: 'POST', body: JSON.stringify(body) }),
 
