@@ -2,6 +2,7 @@
 // Règle CLAUDE.md : ne pas créer de fichiers de types en dehors de celui-ci.
 
 export type Role = 'STUDENT' | 'COMPANY' | 'ADMIN'
+export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED'
 export type JobType = 'STAGE' | 'ALTERNANCE' | 'CDI' | 'CDD' | 'FREELANCE'
 export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'INTERVIEW'
 
@@ -32,6 +33,17 @@ export interface User {
 export interface UserWithProfiles extends User {
   student?: Student
   company?: Company
+}
+
+// Ligne utilisateur du dashboard admin (GET /admin/users)
+export interface AdminUser {
+  id: string
+  email: string
+  role: Role
+  status: UserStatus
+  createdAt: string
+  student?: { firstName: string; lastName: string } | null
+  company?: { name: string } | null
 }
 
 export interface Student {
