@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, GraduationCap, Loader2 } from 'lucide-react'
+import { Building2, CheckCircle2, Circle, GraduationCap, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PasswordInput } from '@/components/shared/PasswordInput'
 import { api } from '@/lib/api'
 
 // Rôles proposés à l'inscription (ADMIN se crée côté back uniquement)
@@ -44,6 +45,11 @@ export default function RegisterPage() {
   const [role, setRole] = useState<RegisterRole | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Validation en temps réel — pilote la checklist et l'état du bouton
+  const passwordLongEnough = form.password.length >= 8
+  const passwordsMatch =
+    form.password.length > 0 && form.password === form.confirmPassword
 
   function updateField(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -194,33 +200,47 @@ export default function RegisterPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="password">Mot de passe</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   autoComplete="new-password"
                   placeholder="8 caractères min."
                   value={form.password}
                   onChange={updateField('password')}
+                  aria-describedby="password-checklist"
                   required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirmation</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   autoComplete="new-password"
                   placeholder="••••••••"
                   value={form.confirmPassword}
                   onChange={updateField('confirmPassword')}
+                  aria-describedby="password-checklist"
                   required
                 />
               </div>
             </div>
 
+            {/* Checklist temps réel — feedback immédiat, lu poliment par les lecteurs d'écran */}
+            <ul
+              id="password-checklist"
+              aria-live="polite"
+              className="space-y-1.5 text-xs"
+            >
+              <Requirement met={passwordLongEnough}>
+                Au moins 8 caractères
+              </Requirement>
+              <Requirement met={passwordsMatch}>
+                Les deux mots de passe correspondent
+              </Requirement>
+            </ul>
+
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !passwordLongEnough || !passwordsMatch}
               className="w-full bg-accent font-semibold text-accent-foreground hover:bg-accent/90"
             >
               {isSubmitting ? (
@@ -246,6 +266,30 @@ export default function RegisterPage() {
         </p>
       </CardContent>
     </Card>
+  )
+}
+
+/* Ligne de la checklist mot de passe — icône verte quand la condition est remplie */
+function Requirement({
+  met,
+  children,
+}: {
+  met: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <li
+      className={`flex items-center gap-2 transition-colors ${
+        met ? 'text-success' : 'text-muted-foreground'
+      }`}
+    >
+      {met ? (
+        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+      ) : (
+        <Circle className="h-3.5 w-3.5" aria-hidden />
+      )}
+      {children}
+    </li>
   )
 }
 
