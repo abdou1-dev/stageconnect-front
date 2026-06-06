@@ -2,11 +2,11 @@
 
 // Page profil étudiant — affichage + édition inline.
 // Chargement : GET /auth/me (→ id étudiant) puis GET /students/:id.
-import { Loader2, MapPin, Pencil, Phone, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { FileText, FileUp, Loader2, MapPin, Pencil, Phone, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarUpload } from '@/components/shared/AvatarUpload'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -79,6 +79,17 @@ export default function StudentProfilePage() {
   function updateField(field: keyof EditForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  }
+
+  // Persiste l'URL Cloudinary après upload — appelé par AvatarUpload
+  async function handlePhotoUploaded(url: string) {
+    if (!profile) return
+    const res = await api.put<StudentProfile>(`/students/${profile.id}`, {
+      photoUrl: url,
+    })
+    if (!res.success) throw new Error(res.error)
+    setProfile({ ...profile, photoUrl: res.data.photoUrl ?? url })
+    toast.success('Photo de profil mise à jour !')
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -160,7 +171,7 @@ export default function StudentProfilePage() {
             isSaving={isSaving}
           />
         ) : (
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} onPhotoUploaded={handlePhotoUploaded} />
         )
       ) : null}
     </div>
@@ -168,7 +179,13 @@ export default function StudentProfilePage() {
 }
 
 /* ————— Affichage ————— */
-function ProfileCard({ profile }: { profile: StudentProfile }) {
+function ProfileCard({
+  profile,
+  onPhotoUploaded,
+}: {
+  profile: StudentProfile
+  onPhotoUploaded: (url: string) => Promise<void>
+}) {
   const initials =
     `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase()
 
@@ -176,17 +193,12 @@ function ProfileCard({ profile }: { profile: StudentProfile }) {
     <Card className="animate-fade-up overflow-hidden border-primary/10 py-0">
       {/* Bandeau identité sur fond bleu sombre */}
       <div className="flex flex-col items-center gap-5 bg-primary px-6 py-8 text-primary-foreground sm:flex-row sm:items-center">
-        <Avatar className="h-20 w-20 border-2 border-accent">
-          {profile.photoUrl && (
-            <AvatarImage
-              src={profile.photoUrl}
-              alt={`Photo de ${profile.firstName} ${profile.lastName}`}
-            />
-          )}
-          <AvatarFallback className="bg-primary-blue font-heading text-xl font-bold text-white">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <AvatarUpload
+          currentUrl={profile.photoUrl}
+          fallbackText={initials}
+          onUploaded={onPhotoUploaded}
+          ariaLabel="Changer ma photo de profil"
+        />
         <div className="text-center sm:text-left">
           <h2 className="font-heading text-2xl font-extrabold tracking-tight">
             {profile.firstName} {profile.lastName}
@@ -226,6 +238,11 @@ function ProfileCard({ profile }: { profile: StudentProfile }) {
         </section>
 
         <section>
+          <SectionLabel>CV</SectionLabel>
+          <CvSection profile={profile} />
+        </section>
+
+        <section>
           <SectionLabel>Compétences</SectionLabel>
           <div className="mt-3 flex flex-wrap gap-2">
             {profile.skills.length > 0 ? (
@@ -246,6 +263,94 @@ function ProfileCard({ profile }: { profile: StudentProfile }) {
         </section>
       </CardContent>
     </Card>
+  )
+}
+
+/* ————— Section CV — upload PDF via le back (POST /upload/cv) ————— */
+function CvSection({ profile }: { profile: StudentProfile }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [cvUrl, setCvUrl] = useState(profile.cvUrl ?? null)
+  const [isUploading, setIsUploading] = useState(false)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Le CV doit être un fichier PDF.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('CV trop lourd : 5 Mo maximum.')
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await api.upload<{ cvUrl: string }>('/upload/cv', formData)
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      setCvUrl(res.data.cvUrl)
+      toast.success('CV mis à jour !')
+    } catch {
+      toast.error('Upload impossible. Vérifiez votre connexion.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      {cvUrl ? (
+        <a
+          href={cvUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-sm font-semibold text-primary-blue underline-offset-4 hover:underline"
+        >
+          <FileText className="h-4 w-4" aria-hidden />
+          Voir mon CV
+        </a>
+      ) : (
+        <span className="text-sm italic text-muted-foreground">
+          Aucun CV — les recruteurs le consultent depuis vos candidatures.
+        </span>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => inputRef.current?.click()}
+        disabled={isUploading}
+        className="border-primary/20 font-semibold text-primary hover:border-accent hover:text-accent"
+      >
+        {isUploading ? (
+          <>
+            <Loader2 className="animate-spin" aria-hidden />
+            Envoi…
+          </>
+        ) : (
+          <>
+            <FileUp className="h-4 w-4" aria-hidden />
+            {cvUrl ? 'Remplacer le CV' : 'Ajouter mon CV'}
+          </>
+        )}
+      </Button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-hidden
+        tabIndex={-1}
+      />
+      <span className="text-xs text-muted-foreground">PDF · 5 Mo max</span>
+    </div>
   )
 }
 

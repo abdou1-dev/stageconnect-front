@@ -19,6 +19,7 @@ import { use, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { JobTypeBadge } from '@/components/etudiant/JobTypeBadge'
+import { ContactButton } from '@/components/shared/ContactButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -130,11 +131,20 @@ export default function JobDetailPage({
                 </div>
               </div>
             </div>
-            <ApplyDialog
-              job={job}
-              hasApplied={hasApplied}
-              onApplied={() => setHasApplied(true)}
-            />
+            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+              <ApplyDialog
+                job={job}
+                hasApplied={hasApplied}
+                onApplied={() => setHasApplied(true)}
+              />
+              {job.company?.userId && (
+                <ContactButton
+                  receiverId={job.company.userId}
+                  recipientName={job.company.name}
+                  messagesPath="/etudiant/messages"
+                />
+              )}
+            </div>
           </div>
 
           {/* Caractéristiques */}

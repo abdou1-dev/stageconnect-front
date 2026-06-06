@@ -3,14 +3,23 @@
 // Mes candidatures — tableau de bord des statuts.
 // GET /applications/mine (limite API : 50/page) ; filtres par statut
 // côté client avec compteurs. isLoading dérivé de la clé de requête.
-import { ArrowRight, FileText, Inbox } from 'lucide-react'
+import { ArrowRight, FileText, Inbox, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { StatusBadge, STATUS_LABELS } from '@/components/etudiant/StatusBadge'
 import { JobTypeBadge } from '@/components/etudiant/JobTypeBadge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { api } from '@/lib/api'
 import { formatRelativeDate } from '@/lib/utils'
@@ -48,9 +57,11 @@ const STAGGER_DELAYS = [
 export default function StudentApplicationsPage() {
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [version, setVersion] = useState(0) // incrémenté après une annulation
   const [result, setResult] = useState<QueryResult | null>(null)
+  const [cancelingApp, setCancelingApp] = useState<Application | null>(null)
 
-  const queryKey = `page=${page}&limit=${PAGE_SIZE}`
+  const queryKey = `page=${page}&limit=${PAGE_SIZE}&v=${version}`
 
   useEffect(() => {
     let cancelled = false
@@ -103,6 +114,22 @@ export default function StudentApplicationsPage() {
     statusFilter === 'ALL'
       ? applications
       : applications.filter((app) => app.status === statusFilter)
+
+  async function confirmCancel() {
+    if (!cancelingApp) return
+    try {
+      const res = await api.delete(`/applications/${cancelingApp.id}`)
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      toast.success('Candidature annulée.')
+      setCancelingApp(null)
+      setVersion((v) => v + 1)
+    } catch {
+      toast.error('Annulation impossible. Vérifiez votre connexion.')
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -174,11 +201,46 @@ export default function StudentApplicationsPage() {
                   key={app.id}
                   className={`animate-fade-up ${STAGGER_DELAYS[Math.min(i, STAGGER_DELAYS.length - 1)]}`}
                 >
-                  <ApplicationRow application={app} />
+                  <ApplicationRow
+                    application={app}
+                    onCancel={() => setCancelingApp(app)}
+                  />
                 </li>
               ))}
             </ul>
           )}
+
+          {/* Confirmation d'annulation */}
+          <Dialog
+            open={cancelingApp !== null}
+            onOpenChange={(o) => !o && setCancelingApp(null)}
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="font-heading text-xl font-extrabold text-primary">
+                  Annuler cette candidature ?
+                </DialogTitle>
+                <DialogDescription>
+                  Votre candidature pour «{' '}
+                  {cancelingApp?.job?.title ?? 'cette offre'} » sera retirée.
+                  Vous pourrez repostuler tant que l’offre est active.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setCancelingApp(null)}
+                  className="border-primary/20 text-primary"
+                >
+                  Garder ma candidature
+                </Button>
+                <Button variant="destructive" onClick={confirmCancel}>
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Annuler la candidature
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Pagination — seulement au-delà de 50 candidatures */}
           {totalPages > 1 && (
@@ -216,7 +278,13 @@ export default function StudentApplicationsPage() {
 }
 
 /* ————— Ligne de candidature ————— */
-function ApplicationRow({ application }: { application: Application }) {
+function ApplicationRow({
+  application,
+  onCancel,
+}: {
+  application: Application
+  onCancel: () => void
+}) {
   const job = application.job
 
   return (
@@ -256,8 +324,20 @@ function ApplicationRow({ application }: { application: Application }) {
           </div>
         </div>
       </div>
-      <div className="shrink-0 sm:text-right">
+      <div className="flex shrink-0 items-center gap-2 sm:justify-end">
         <StatusBadge status={application.status} />
+        {/* Seules les candidatures en attente sont annulables (règle back) */}
+        {application.status === 'PENDING' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onCancel}
+            aria-label={`Annuler la candidature pour ${job?.title ?? 'cette offre'}`}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        )}
       </div>
     </div>
   )

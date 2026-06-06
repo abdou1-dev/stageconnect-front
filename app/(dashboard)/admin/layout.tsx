@@ -1,16 +1,16 @@
 'use client'
 
-// Coquille de dashboard partagée étudiant/entreprise — sidebar éditoriale
-// bleu sombre (desktop), Sheet latérale (mobile), bloc user + déconnexion.
-// Item actif : filet orange vertical + fond éclairci.
-import { LogOut, Menu, type LucideIcon } from 'lucide-react'
+// Layout du dashboard admin — sidebar sobre avec ancres vers les sections
+// de la page unique (Stats / Utilisateurs / Offres) + badge ADMIN.
+import { BarChart3, LogOut, Menu, Newspaper, Users } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ChangePasswordDialog } from '@/components/shared/ChangePasswordDialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -21,52 +21,37 @@ import {
 } from '@/components/ui/sheet'
 import { useAuth } from '@/hooks/useAuth'
 
-export interface NavItem {
-  href: string
-  label: string
-  icon: LucideIcon
-}
+const SECTIONS = [
+  { href: '/admin#stats', label: 'Stats', icon: BarChart3 },
+  { href: '/admin#utilisateurs', label: 'Utilisateurs', icon: Users },
+  { href: '/admin#offres', label: 'Offres', icon: Newspaper },
+] as const
 
-interface DashboardShellProps {
-  navItems: readonly NavItem[]
-  roleLabel: string
-  homeHref: string
-  children: React.ReactNode
-}
-
-export function DashboardShell({
-  navItems,
-  roleLabel,
-  homeHref,
+export default function AdminDashboardLayout({
   children,
-}: DashboardShellProps) {
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar desktop */}
       <aside className="sticky top-0 hidden h-screen w-64 flex-col bg-primary text-primary-foreground lg:flex">
-        <SidebarContent navItems={navItems} roleLabel={roleLabel} />
+        <AdminSidebar />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Header mobile */}
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-primary/10 bg-background/90 px-4 py-3 backdrop-blur-sm lg:hidden">
           <Link
-            href={homeHref}
+            href="/admin"
             className="whitespace-nowrap font-heading text-base font-extrabold tracking-tight text-primary"
           >
             Stage<span className="text-accent">—</span>Connect
           </Link>
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-            {/* Base UI : prop render (l'API asChild de Radix n'existe plus) */}
             <SheetTrigger
               render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Ouvrir le menu de navigation"
-                >
+                <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
                   <Menu className="h-5 w-5" aria-hidden />
                 </Button>
               }
@@ -78,11 +63,7 @@ export function DashboardShell({
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
-              <SidebarContent
-                navItems={navItems}
-                roleLabel={roleLabel}
-                onNavigate={() => setSheetOpen(false)}
-              />
+              <AdminSidebar onNavigate={() => setSheetOpen(false)} />
             </SheetContent>
           </Sheet>
         </header>
@@ -93,29 +74,18 @@ export function DashboardShell({
   )
 }
 
-/* Contenu partagé sidebar desktop / Sheet mobile */
-function SidebarContent({
-  navItems,
-  roleLabel,
-  onNavigate,
-}: {
-  navItems: readonly NavItem[]
-  roleLabel: string
-  onNavigate?: () => void
-}) {
-  const pathname = usePathname()
+function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { user, logout, isLoading } = useAuth()
 
   function handleLogout() {
     logout()
-    toast.success('Vous êtes déconnecté. À bientôt !')
+    toast.success('Vous êtes déconnecté.')
     router.push('/login')
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo + kicker */}
       <div className="px-6 pb-6 pt-7">
         <Link
           href="/"
@@ -124,56 +94,39 @@ function SidebarContent({
         >
           Stage<span className="text-accent">—</span>Connect
         </Link>
-        <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-primary-foreground/50">
-          {roleLabel}
-        </p>
+        <Badge className="mt-2 border-0 bg-accent font-bold tracking-[0.15em] text-accent-foreground">
+          ADMIN
+        </Badge>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3" aria-label="Navigation du dashboard">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname.startsWith(href)
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              aria-current={isActive ? 'page' : undefined}
-              className={`relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary-foreground/10 text-primary-foreground'
-                  : 'text-primary-foreground/65 hover:bg-primary-foreground/5 hover:text-primary-foreground'
-              }`}
-            >
-              {/* Filet orange — marqueur éditorial de l'item actif */}
-              {isActive && (
-                <span
-                  className="absolute inset-y-1.5 left-0 w-1 rounded-full bg-accent"
-                  aria-hidden
-                />
-              )}
-              <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
-              {label}
-            </Link>
-          )
-        })}
+      <nav className="flex-1 space-y-1 px-3" aria-label="Sections du dashboard">
+        {SECTIONS.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-primary-foreground/65 transition-colors hover:bg-primary-foreground/5 hover:text-primary-foreground"
+          >
+            <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden />
+            {label}
+          </Link>
+        ))}
       </nav>
 
-      {/* Bloc utilisateur + déconnexion */}
       <div className="border-t border-primary-foreground/10 p-4">
         {isLoading ? (
           <div className="h-10 animate-pulse rounded-md bg-primary-foreground/10" />
         ) : (
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9 border border-primary-foreground/20">
-              <AvatarFallback className="bg-primary-blue text-xs font-bold text-white">
+              <AvatarFallback className="bg-accent text-xs font-bold text-accent-foreground">
                 {(user?.email ?? '?').slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{user?.email ?? '—'}</p>
               <p className="text-[10px] uppercase tracking-[0.2em] text-primary-foreground/50">
-                {roleLabel}
+                Administrateur
               </p>
             </div>
             <ChangePasswordDialog buttonClassName="shrink-0 text-primary-foreground/65 hover:bg-primary-foreground/10 hover:text-accent" />

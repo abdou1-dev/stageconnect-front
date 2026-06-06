@@ -6,7 +6,7 @@ import { Building2, Globe, Loader2, MapPin, Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { AvatarUpload } from '@/components/shared/AvatarUpload'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -74,6 +74,17 @@ export default function CompanyProfilePage() {
   function updateField(field: keyof EditForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  }
+
+  // Persiste l'URL Cloudinary du logo après upload — appelé par AvatarUpload
+  async function handleLogoUploaded(url: string) {
+    if (!profile) return
+    const res = await api.put<CompanyProfile>(`/companies/${profile.id}`, {
+      logoUrl: url,
+    })
+    if (!res.success) throw new Error(res.error)
+    setProfile({ ...profile, logoUrl: res.data.logoUrl ?? url })
+    toast.success('Logo mis à jour !')
   }
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
@@ -148,7 +159,7 @@ export default function CompanyProfilePage() {
             isSaving={isSaving}
           />
         ) : (
-          <ProfileCard profile={profile} />
+          <ProfileCard profile={profile} onLogoUploaded={handleLogoUploaded} />
         )
       ) : null}
     </div>
@@ -156,18 +167,23 @@ export default function CompanyProfilePage() {
 }
 
 /* ————— Affichage ————— */
-function ProfileCard({ profile }: { profile: CompanyProfile }) {
+function ProfileCard({
+  profile,
+  onLogoUploaded,
+}: {
+  profile: CompanyProfile
+  onLogoUploaded: (url: string) => Promise<void>
+}) {
   return (
     <Card className="animate-fade-up overflow-hidden border-primary/10 py-0">
       <div className="flex flex-col items-center gap-5 bg-primary px-6 py-8 text-primary-foreground sm:flex-row">
-        <Avatar className="h-20 w-20 rounded-lg border-2 border-accent">
-          {profile.logoUrl && (
-            <AvatarImage src={profile.logoUrl} alt={`Logo de ${profile.name}`} />
-          )}
-          <AvatarFallback className="rounded-lg bg-primary-blue font-heading text-xl font-bold text-white">
-            {profile.name.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <AvatarUpload
+          currentUrl={profile.logoUrl}
+          fallbackText={profile.name.slice(0, 2).toUpperCase()}
+          onUploaded={onLogoUploaded}
+          shape="square"
+          ariaLabel="Changer le logo de l’entreprise"
+        />
         <div className="text-center sm:text-left">
           <h2 className="font-heading text-2xl font-extrabold tracking-tight">
             {profile.name}

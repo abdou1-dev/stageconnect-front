@@ -2,7 +2,7 @@
 
 // Liste des offres — filtres (type, ville, secteur), pagination, skeletons.
 // GET /jobs est public ; les filtres texte sont débouncés (400 ms).
-import { ChevronLeft, ChevronRight, SearchX } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, SearchX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { JobCard } from '@/components/etudiant/JobCard'
@@ -59,24 +59,30 @@ export default function StudentJobsPage() {
 
   // Filtres saisis (immédiats) vs filtres appliqués (débouncés)
   const [typeFilter, setTypeFilter] = useState<JobType | 'ALL'>('ALL')
+  const [qInput, setQInput] = useState('')
   const [villeInput, setVilleInput] = useState('')
   const [secteurInput, setSecteurInput] = useState('')
-  const [applied, setApplied] = useState({ ville: '', secteur: '' })
+  const [applied, setApplied] = useState({ q: '', ville: '', secteur: '' })
 
   // Débounce des champs texte — évite une requête par frappe
   useEffect(() => {
     const timer = setTimeout(() => {
-      setApplied({ ville: villeInput.trim(), secteur: secteurInput.trim() })
+      setApplied({
+        q: qInput.trim(),
+        ville: villeInput.trim(),
+        secteur: secteurInput.trim(),
+      })
       setPage(1)
     }, 400)
     return () => clearTimeout(timer)
-  }, [villeInput, secteurInput])
+  }, [qInput, villeInput, secteurInput])
 
   const params = new URLSearchParams({
     page: String(page),
     limit: String(PAGE_SIZE),
   })
   if (typeFilter !== 'ALL') params.set('type', typeFilter)
+  if (applied.q) params.set('q', applied.q)
   if (applied.ville) params.set('ville', applied.ville)
   if (applied.secteur) params.set('secteur', applied.secteur)
   const queryKey = params.toString()
@@ -141,7 +147,23 @@ export default function StudentJobsPage() {
       </div>
 
       {/* Barre de filtres */}
-      <div className="mb-8 grid gap-4 rounded-lg border border-primary/10 bg-card p-4 sm:grid-cols-3">
+      <div className="mb-8 space-y-4 rounded-lg border border-primary/10 bg-card p-4">
+        {/* Recherche texte libre — titre, description ou secteur */}
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            aria-label="Rechercher une offre"
+            placeholder="Rechercher un poste, une mission, un secteur…"
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label htmlFor="filter-type" className="text-xs uppercase tracking-[0.15em]">
             Type de contrat
@@ -188,6 +210,7 @@ export default function StudentJobsPage() {
             value={secteurInput}
             onChange={(e) => setSecteurInput(e.target.value)}
           />
+        </div>
         </div>
       </div>
 
