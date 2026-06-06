@@ -175,6 +175,12 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind 4 a retiré le cursor:pointer par défaut des boutons — on le restaure
+     pour tous les éléments interactifs non désactivés (UX) */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 /* Respect des préférences d'accessibilité — coupe les animations décoratives */
