@@ -119,13 +119,17 @@ export default function CompanyApplicationsPage() {
 
   async function changeStatus(app: ReceivedApplication, status: ApplicationStatus) {
     if (status === app.status) return
-    const res = await api.put(`/applications/${app.id}/status`, { status })
-    if (!res.success) {
-      toast.error(res.error)
-      return
+    try {
+      const res = await api.put(`/applications/${app.id}/status`, { status })
+      if (!res.success) {
+        toast.error(res.error)
+        return
+      }
+      toast.success(`Statut mis à jour : ${STATUS_OPTIONS[status]}`)
+      setVersion((v) => v + 1)
+    } catch {
+      toast.error('Changement de statut impossible. Vérifiez votre connexion.')
     }
-    toast.success(`Statut mis à jour : ${STATUS_OPTIONS[status]}`)
-    setVersion((v) => v + 1)
   }
 
   return (

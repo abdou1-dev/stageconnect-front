@@ -7,11 +7,15 @@ import type { ApiResponse } from '@/types'
 // `||` (et non `??`) : couvre aussi la variable définie mais vide
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
+// Timeout réseau : évite les requêtes qui pendent indéfiniment
+const REQUEST_TIMEOUT_MS = 15_000
+
 async function request<T>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const token = getToken()
 
   const res = await fetch(`${BASE_URL}${url}`, {
     ...options,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
