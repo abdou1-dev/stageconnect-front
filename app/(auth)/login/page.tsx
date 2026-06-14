@@ -2,8 +2,8 @@
 
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
@@ -27,8 +27,28 @@ const HOME_BY_ROLE: Record<Role, string> = {
   ADMIN: '/admin',
 }
 
-export default function LoginPage() {
+// Section autorisée par rôle — sert à valider le ?redirect posé par le proxy
+const SECTION_BY_ROLE: Record<Role, string> = {
+  STUDENT: '/etudiant',
+  COMPANY: '/entreprise',
+  ADMIN: '/admin',
+}
+
+// Destination après connexion : on respecte le ?redirect du proxy s'il pointe
+// vers la section du rôle de l'utilisateur (évite tout open-redirect / mauvais rôle),
+// sinon on retombe sur l'accueil du rôle.
+function resolveDestination(user: { role: Role }, redirect: string | null): string {
+  if (redirect?.startsWith(`${SECTION_BY_ROLE[user.role]}/`) || redirect === SECTION_BY_ROLE[user.role]) {
+    return redirect
+  }
+  return HOME_BY_ROLE[user.role]
+}
+
+// useSearchParams impose une frontière Suspense : on isole le formulaire et on
+// l'enveloppe dans <Suspense> au niveau de l'export par défaut.
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -40,7 +60,7 @@ export default function LoginPage() {
     try {
       const user = await login({ email, password })
       toast.success('Connexion réussie. Bienvenue !')
-      router.push(HOME_BY_ROLE[user.role])
+      router.push(resolveDestination(user, searchParams.get('redirect')))
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : 'Connexion impossible. Réessayez.'
@@ -115,5 +135,14 @@ export default function LoginPage() {
         </p>
       </CardContent>
     </Card>
+  )
+}
+
+export default function LoginPage() {
+  // Fallback léger pendant l'hydratation de useSearchParams — pas de flash de layout
+  return (
+    <Suspense fallback={<div className="h-[28rem] w-full max-w-md" aria-hidden />}>
+      <LoginForm />
+    </Suspense>
   )
 }
