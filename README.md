@@ -81,7 +81,6 @@ types/         → index.ts (tous les types partagés)
 - `main` = production uniquement — release par PR `develop → main` avec review
 - Composants en anglais, commentaires en français, pas de `any`, Server Components par défaut
 
-## Auteurs
+## Licence
 
-- **Abdoulaye DIAW** — Lead front · [@abdou1-dev](https://github.com/abdou1-dev)
-- **Abdallah Moussa DIALLO** — Lead back · [@LivaiAckerman7](https://github.com/LivaiAckerman7)
+[MIT](./LICENSE) — projet académique réalisé dans le cadre du mémoire de Licence 3 IDA, UNCHK · 2026.
