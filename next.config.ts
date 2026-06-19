@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Fixe la racine du workspace : un package-lock.json parasite existe dans
-  // C:\Users\DELL\, ce qui faisait hesiter Turbopack sur la racine a inferer.
+  // Fixe explicitement la racine du workspace au dossier du projet :
+  // evite que Turbopack infere une mauvaise racine s'il detecte un
+  // package-lock.json parasite dans un dossier parent.
   turbopack: {
     root: __dirname,
   },
