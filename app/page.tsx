@@ -448,6 +448,16 @@ function Footer() {
             Projet
           </p>
           <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
+            <li>
+              <Link href="/a-propos" className="transition-colors hover:text-primary-blue">
+                À propos
+              </Link>
+            </li>
+            <li>
+              <Link href="/mentions-legales" className="transition-colors hover:text-primary-blue">
+                Mentions légales
+              </Link>
+            </li>
             <li>Mémoire L3 IDA — UNCHK</li>
             <li>Conçu à Dakar, Sénégal</li>
           </ul>
