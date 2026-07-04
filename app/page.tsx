@@ -458,6 +458,11 @@ function Footer() {
                 Mentions légales
               </Link>
             </li>
+            <li>
+              <Link href="/faq" className="transition-colors hover:text-primary-blue">
+                FAQ
+              </Link>
+            </li>
             <li>Mémoire L3 IDA — UNCHK</li>
             <li>Conçu à Dakar, Sénégal</li>
           </ul>
